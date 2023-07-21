@@ -549,6 +549,14 @@ and add the SNS topic as a target for EventBridge
 ```
 
 ## Receiving a SMS
+First we need to go to SNS and verify our phone number in Amazon SNS
+
+Go to the text messaging 
+![Alt text](image-12.png)
+
+and verify your phone number for sending an event
+![Alt text](image-8.png)
+
 Trigger the event and receive your SMS!
 `curl -X POST https://azt54qc052.execute-api.ap-southeast-2.amazonaws.com/Prod/ -d '{"messageID":"<VALID MESSAGE ID>"}' -H 'Content-Type: application/json'`
 
