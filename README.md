@@ -595,12 +595,15 @@ and add the SNS topic as a target for EventBridge
 First we need to go to SNS and verify our phone number in Amazon SNS
 
 Go to the text messaging 
+
 ![Alt text](image-12.png)
 
 and verify your phone number for sending an event
+
 ![Alt text](image-8.png)
 
 Trigger the event and receive your SMS!
+
 `curl -X POST <YOUR API ENDPOINT>/api -d '"<YOUR MESSAGE ID>"' -H "Content-Type: application/json"`
 
 * In a few seconds you should receive a text message with a JSON Payload that contains the event data from `Events.cs` class.
