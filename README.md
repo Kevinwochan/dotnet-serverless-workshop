@@ -606,4 +606,4 @@ Trigger the event and receive your SMS!
 
 `curl -X POST <YOUR API ENDPOINT>/api -d '"<YOUR MESSAGE ID>"' -H "Content-Type: application/json"`
 
-* In a few seconds you should receive a text message with a JSON Payload that contains the event data from `Events.cs` class.
+In a few seconds you should receive a text message with a JSON Payload that contains the event data from `Events.cs` class.
