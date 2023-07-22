@@ -1,17 +1,13 @@
----
-title: ".NET Serverless EventBridge Workshop"
-weight: 0
----
-
 # .NET Serverless EventBridge Workshop
 
 The workshop walks developers through an experience of developing a .NET 6 ASP web api using API Gateway and Lambda. The Lambda processes the HTTP request and places and event on EventBridge which triggers a rule to deliver an SMS notification via SNS!
+
 ![Architecture Diagram](diagram.png)
 
 # 1. Tooling up
 ![Alt text](image-6.png)
-### Install SDK and CLI
-
+## (Locally) 
+### nstall the .NET SDK and AWS CLI
 - https://dotnet.microsoft.com/en-us/download 
 - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 
@@ -21,7 +17,6 @@ Run the following to verify installation:
 dotnet --version
 6.0.412
 ```
-
 ### Setup AWS Credentials
 
 ![](image.png)
@@ -30,7 +25,13 @@ dotnet --version
 Set your environment variable with credentials 
 
 
-### Set up build log storage
+## (Remotely) Cloud9
+Alternatively if you do not have permission to install the runtimes you may want to complete this workshop on a Cloud9 environment 
+1. https://docs.aws.amazon.com/cloud9/latest/user-guide/create-environment-main.html
+2. https://docs.aws.amazon.com/cloud9/latest/user-guide/sample-dotnetcore.html (Stop after Step 2)
+
+
+## Set up build log storage
 
 Create a new S3 bucket by logging into your AWS account. This bucket will be used to store build logs
 ```
@@ -44,7 +45,22 @@ AWS Lambda is a serverless, event-driven compute service that lets you run code 
 
 ![Alt text](image-4.png)
 
-## Create app from blueprint
+## Install .NET Lambda Tools and serverless templates
+
+In the .NET CLI, you use the new command to create .NET projects from a command line. This is useful if you want to create a project outside of Visual Studio. To view a list of the available project types, open a command line, navigate to where you installed the .NET Core runtime, and then run the following command:
+
+```
+dotnet new -i Amazon.Lambda.Templates
+```
+
+AWS also provides tool extensions to the .NET CLI focused on building .NET Core and ASP.NET Core applications and deploying them to AWS services. Many of these deployment commands are the same commands the AWS Toolkit for Visual Studio uses to perform its deployment features.
+
+```
+dotnet tool install -g Amazon.Lambda.Tools
+```
+
+
+## Create an ASP.NET app from a blueprint
 We will use the serverless.AspNetCoreWebAPI template. This template produces a simple ASP web API. The application has the required setup to deploy an API Gateway that proxies incoming web requests to AWS Lambda function which has an ASP app deployed to it. It has the necessary code that converts the Lambda Event to ASP.NET context implicity. This allows you to write this app as a regular ASP.NET app. 
 
 https://github.com/aws/aws-lambda-dotnet
@@ -93,12 +109,12 @@ Some of the key generated files are:
 - serverless.template: The AWS SAM template file. This is where we define the AWS resources that will be used in the application.
 - Startup.cs: In this file we have code that tells what to do when a GET request is made on our API.
 
- ## Deploy your lambda
+## Deploy your lambda
 With dependencies installed we can now deploy our first lambda function!
 `dotnet lambda deploy-serverless --stack-name DotNetServerlessStack --s3-bucket <REPLACE WITH S3 BUCKET NAME>`
 
 ![Alt text](image-5.png)
-Resource Status is visibile in ClouFormation
+Resource Status should visibile in ClouFormation
 
 ![Alt text](image-2.png)
 And the endpoint is responding
@@ -261,7 +277,7 @@ namespace Store.Access
 ```
 </details>
 
-## Handle PUT requests
+## Handle the PUT request
 MVC controllers are responsible for responding to requests made against an ASP.NET MVC website. Each browser request is mapped to a particular controller. 
 
 For more information visit the 
@@ -296,10 +312,14 @@ Update the HttpPut handler to
 
 ```
 
+## Deploy your changes
+`dotnet lambda deploy-serverless --stack-name DotNetServerlessStack --s3-bucket <REPLACE WITH S3 BUCKET NAME>`
+
+
 ## Let's test the API!
 Don't forget to replace the URL with your API Gateway endpoint
 
-`curl -X PUT https://l8qowfnam8.execute-api.ap-southeast-2.amazonaws.com/Prod/api -d '{"message":"this is the message", "otherStuff":"this is otherStuff"}' -H 'Content-Type: application/json'`
+`curl -X PUT <YOUR API ENDPOINT>/api -d '{"message":"this is the message", "otherStuff":"this is otherStuff"}' -H 'Content-Type: application/json'`
 
 # 4. Publish requests to an Event Bus
 ## Amazon EventBridge
@@ -312,18 +332,19 @@ EventBridge event buses are well suited for many-to-many routing of events betwe
 ![Alt text](image-11.png)
 Amazon CloudWatch collects and visualizes real-time logs, metrics, and event data in automated dashboards to streamline your infrastructure and application maintenance.
 
-## add EventBridge and Cloudwatch to your SAM template
+## Add EventBridge and log events to CloudWatch
 
-Modify the `serverless.yaml` file and add definition of an EventBridge Rule and Cloudwatch for logging
+Can you use the serverless land repository to:
 
-This rule will:
-- execute only if event source matches `my.source`. 
-- publish the event to CloudWatch for logging
+1. Create and EventBridge rule to capture events?
+2. Set CloudWatch as the target?
+3. Add permissions to the Lambda function to allow pusblishing events to EventBridge?
 
+https://serverlessland.com/patterns/eventbridge-cloudwatch
 
-Copy the code snippet below into `serverless.yaml` and add it under the `Resources` section: 
+<details><summary>Answer</summary>
 
-<details><summary>Code Snippet</summary>
+Copy the code snippet below into `serverless.yaml` and add it under the `Resources` section
 
 ```
   EventRule:
@@ -381,6 +402,27 @@ Copy the code snippet below into `serverless.yaml` and add it under the `Resourc
           ]
         }
 ```
+
+</details>
+
+<details><summary>Answer</summary>
+ 
+Use the below policies for the Lambda function
+ 
+```
+      Policies:
+      - AWSLambda_FullAccess
+      - DynamoDBCrudPolicy:
+          TableName: !Ref StorageTable
+      - Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - events:PutEvents
+            Resource:
+              - '*'
+```
+
 </details>
 
 ## Install helper packages
@@ -487,8 +529,7 @@ Replace the POST controller route with the code snippet
 ```
 
 ## Did it work?
-
-We will use the .NET lambda tools to deploy the serverless application. We will use the command `dotnet lambda deploy-serverless --stack-name DotNetServerlessStack --s3-bucket <REPLACE WITH S3 BUCKET NAME>`
+`dotnet lambda deploy-serverless --stack-name DotNetServerlessStack --s3-bucket <REPLACE WITH S3 BUCKET NAME>`
 
 Once Deployed:
 1. Navigate to DynamoDB and find a valid message ID
@@ -496,7 +537,7 @@ Once Deployed:
 
 2. Construct a HTTP POST request to test the API
 
-`curl -X POST https://azt54qc052.execute-api.ap-southeast-2.amazonaws.com/Prod/ -d '{"messageID":"<VALID MESSAGE ID>"}' -H 'Content-Type: application/json'`
+`curl -X POST <YOUR API ENDPOINT>/api -d '"<YOUR MESSAGE ID>"' -H "Content-Type: application/json"`
 
 3. Navigate to CloudWatch to view the logged event
 ![Alt text](image-7.png)
@@ -517,6 +558,15 @@ Now that we have EventBridge setup, we need to write code that will send an even
 Now that our HTTP API when invoked emits an event to SNS, all thats left is to subscribe to the SNS topic to receive the notification. To do this we edit the `serverless.template` file and add a Subscription on the Topic. Add the below code snippet under the `Resources` section. Be sure to replace the `Endpoint` value with your mobile number in the `10DL` format - `+610000000000`:
 
 ```
+  Topic:
+    Type: AWS::SNS::Topic
+  Subscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref Topic
+      Endpoint: "+610000000000"
+      Protocol: sms
+
   EventBridgeToSnSPolicy:
     Type: AWS::SNS::TopicPolicy
     Properties: 
@@ -526,16 +576,9 @@ Now that our HTTP API when invoked emits an event to SNS, all thats left is to s
           Principal:
             Service: events.amazonaws.com
           Action: sns:Publish
-          Resource: !Ref MyTopic
+          Resource: !Ref Topic
       Topics:
-        - !Ref MyTopic
-  MyTopicSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      TopicArn: !Ref MyTopic
-      Endpoint: +61000000000
-      Protocol: sms
-
+        - !Ref Topic
 ```
 
 and add the SNS topic as a target for EventBridge
@@ -544,7 +587,7 @@ and add the SNS topic as a target for EventBridge
       Targets:
         - Arn: !GetAtt LogGroupForEvents.Arn
           Id: LogTarget
-        - Arn: !Ref OneStopTopic
+        - Arn: !Ref Topic
           Id: "Topic"
 ```
 
@@ -558,6 +601,6 @@ and verify your phone number for sending an event
 ![Alt text](image-8.png)
 
 Trigger the event and receive your SMS!
-`curl -X POST https://azt54qc052.execute-api.ap-southeast-2.amazonaws.com/Prod/ -d '{"messageID":"<VALID MESSAGE ID>"}' -H 'Content-Type: application/json'`
+`curl -X POST <YOUR API ENDPOINT>/api -d '"<YOUR MESSAGE ID>"' -H "Content-Type: application/json"`
 
 * In a few seconds you should receive a text message with a JSON Payload that contains the event data from `Events.cs` class.
