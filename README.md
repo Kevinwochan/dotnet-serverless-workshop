@@ -7,7 +7,7 @@ The workshop walks developers through an experience of developing a .NET 6 ASP w
 # 1. Tooling up
 ![Alt text](image-6.png)
 ## (Locally) 
-### nstall the .NET SDK and AWS CLI
+### Install the .NET SDK and AWS CLI
 - https://dotnet.microsoft.com/en-us/download 
 - https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 
